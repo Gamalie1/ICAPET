@@ -10,12 +10,14 @@ import modelo.LogicaConexion;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import javax.swing.JTextField;
 
 public class principal extends javax.swing.JFrame {
 
     String usuario;
     String pwd;
     Connection con;
+    String Nombre, nuevaClave, Seccion, tel, edad, domicilio, localidad, ee, observaciones, sexo; 
     public principal() {
         initComponents();
         //this.setSize(new Dimension(770, 345));
@@ -42,6 +44,37 @@ public class principal extends javax.swing.JFrame {
             System.exit(0);
         }
     }
+    
+    public void obtieneSexo(){
+        if(jrbHombre.isSelected()==true){
+            sexo ="H";
+        }else if(jrbMujer.isSelected()==true){
+            sexo="M";
+        }else{
+            sexo="H";
+        }
+    }
+    
+    public static String generarClave(String municipio) {
+        StringBuilder clave = new StringBuilder();
+        
+        // Dividir el nombre en palabras
+        String[] palabras = municipio.split(" ");
+        
+        // Obtener la inicial de cada palabra y agregarla a la clave
+        for (String palabra : palabras) {
+            if (!palabra.isEmpty()) {
+                clave.append(Character.toUpperCase(palabra.charAt(0)));
+            }
+        }
+        
+        return clave.toString();
+    }
+    
+    
+
+   
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -105,7 +138,7 @@ public class principal extends javax.swing.JFrame {
         jrbMujer = new javax.swing.JRadioButton();
         jLabel10 = new javax.swing.JLabel();
         jLabel11 = new javax.swing.JLabel();
-        jTextField6 = new javax.swing.JTextField();
+        txtDomi = new javax.swing.JTextField();
         txtLocalidad = new javax.swing.JTextField();
         jLabel12 = new javax.swing.JLabel();
         jLabel13 = new javax.swing.JLabel();
@@ -167,6 +200,7 @@ public class principal extends javax.swing.JFrame {
         jMenu5 = new javax.swing.JMenu();
         jMenuItem10 = new javax.swing.JMenuItem();
         jMenuItem11 = new javax.swing.JMenuItem();
+        rbgSexo = new javax.swing.ButtonGroup();
         jPanel1 = new javax.swing.JPanel();
         jTextField1 = new javax.swing.JTextField();
         jMenuBar1 = new javax.swing.JMenuBar();
@@ -458,6 +492,11 @@ public class principal extends javax.swing.JFrame {
 
         btnRegistrarP.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/create.png"))); // NOI18N
         btnRegistrarP.setText("Agregar");
+        btnRegistrarP.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnRegistrarPActionPerformed(evt);
+            }
+        });
 
         btnModificarP.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/update.png"))); // NOI18N
         btnModificarP.setText("Modificar");
@@ -532,7 +571,7 @@ public class principal extends javax.swing.JFrame {
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel6Layout.createSequentialGroup()
                                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel6Layout.createSequentialGroup()
-                                        .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, 186, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(txtDomi, javax.swing.GroupLayout.PREFERRED_SIZE, 186, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addGap(18, 18, 18))
                                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel6Layout.createSequentialGroup()
                                         .addComponent(jrbHombre, javax.swing.GroupLayout.PREFERRED_SIZE, 79, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -587,7 +626,7 @@ public class principal extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(txtLocalidad, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(txtDomi, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(29, 29, 29)
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel13)
@@ -1147,6 +1186,10 @@ public class principal extends javax.swing.JFrame {
          salir();
     }//GEN-LAST:event_jMenuItem2ActionPerformed
 
+    private void btnRegistrarPActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegistrarPActionPerformed
+       
+    }//GEN-LAST:event_btnRegistrarPActionPerformed
+    
     /**
      * @param args the command line arguments
      */
@@ -1285,15 +1328,16 @@ public class principal extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField4;
     private javax.swing.JTextField jTextField5;
-    private javax.swing.JTextField jTextField6;
     private javax.swing.JComboBox<String> jcRol;
     private javax.swing.JRadioButton jrbHombre;
     private javax.swing.JRadioButton jrbMujer;
     private static javax.swing.JDialog login;
     private javax.swing.JDialog participantes;
+    private javax.swing.ButtonGroup rbgSexo;
     private javax.swing.JPasswordField txtCUsuario;
     private javax.swing.JTextField txtClav;
     private javax.swing.JTextField txtClaveElectorP;
+    private javax.swing.JTextField txtDomi;
     private javax.swing.JTextField txtEda;
     private javax.swing.JTextField txtLocalidad;
     private javax.swing.JTextField txtMunicipio;
