@@ -2,6 +2,7 @@ package vista;
 
 import com.formdev.flatlaf.FlatIntelliJLaf;
 import java.awt.Dimension;
+import java.awt.Point;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
@@ -11,15 +12,30 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+import static modelo.LogicaConexion.ejecutaQuery;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import javax.swing.JTable;
+import java.sql.SQLException;
+
 
 public class principal extends javax.swing.JFrame {
-
+    DefaultTableModel TablaGENERAL = new DefaultTableModel();
+    DefaultTableModel TablaGRUPO = new DefaultTableModel();
     String usuario;
     String pwd;
     Connection con;
-    String Nombre, nuevaClave, Seccion, tel, edad, domicilio, localidad, ee, observaciones, sexo; 
+    static Connection conexion = null;
+    static ResultSet rs = null;
+    String sexo; 
+    
     public principal() {
         initComponents();
+        
+        //Tablas 
+        TablaGENERAL = (DefaultTableModel) jTablaGENERAL.getModel();
+        TablaGRUPO   = (DefaultTableModel) jTablaGrupo.getModel();
         //this.setSize(new Dimension(770, 345));
         this.setLocationRelativeTo(null);
         
@@ -35,7 +51,37 @@ public class principal extends javax.swing.JFrame {
         
         Lista.setSize(new Dimension(440, 460));
         Lista.setLocationRelativeTo(null);
-
+        
+        //Metodos para que los datos de la tabla se pasen alos text field
+         jTablaGENERAL.addMouseListener(new MouseAdapter(){
+            @Override
+            public void mouseClicked(MouseEvent e){
+                JTable table=(JTable) e.getSource();
+                Point point = e.getPoint();
+                int row = table.rowAtPoint(point);
+                if(e.getClickCount()==1){
+                    txtNR.setText(jTablaGENERAL.getValueAt(jTablaGENERAL.getSelectedRow(),1).toString());
+                    txtUsuario.setText(jTablaGENERAL.getValueAt(jTablaGENERAL.getSelectedRow(),2).toString());
+                   
+                }
+            }
+         });
+         
+         jTablaGrupo.addMouseListener(new MouseAdapter(){
+            @Override
+            public void mouseClicked(MouseEvent e){
+                JTable table=(JTable) e.getSource();
+                Point point = e.getPoint();
+                int row = table.rowAtPoint(point);
+                if(e.getClickCount()==1){
+                    txtNR1.setText(jTablaGrupo.getValueAt(jTablaGrupo.getSelectedRow(),1).toString());
+                    txtTel.setText(jTablaGrupo.getValueAt(jTablaGrupo.getSelectedRow(),2).toString());
+                    txtClav.setText(jTablaGrupo.getValueAt(jTablaGrupo.getSelectedRow(),3).toString());
+                    txtSeccio.setText(jTablaGrupo.getValueAt(jTablaGrupo.getSelectedRow(),4).toString());
+                }
+            }
+         });
+    
     }
     
     public void salir(){//Metodo para cerrar la aplicacion
@@ -71,6 +117,208 @@ public class principal extends javax.swing.JFrame {
         return clave.toString();
     }
     
+    public static boolean validarCampos(JTextField... campos) {
+        for (JTextField campo : campos) {
+            if (campo.getText().trim().isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+     public void InsertarReprensentanteGNERAL(){
+        try {
+            String rol = jcRol.getSelectedItem().toString(); // Agregar "ROLE " al nombre del rol
+             System.out.println(rol);
+            //Se comprueba que los campos no esten vacios
+            if (txtNR.getText().isEmpty() || txtUsuario.getText().isEmpty() || txtPwd.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(null, "Hace falta datos.");
+
+            } else {
+              Connection con = LogicaConexion.getConecta();
+              PreparedStatement ps;
+                //Se insertan los datos digitados por el empleado hacia la base de datos  
+                String sql = "INSERT INTO representantes_gral(representante_gral,usuario,pwd,current_rol) values( ?, ?, ?, ?::rol);";
+                 ps = con.prepareStatement(sql);
+                //Se prepara la sentencia sql 
+                ps.setString(1, txtNR.getText());
+                ps.setString(2, txtUsuario.getText());
+                ps.setString(3, txtPwd.getText());
+                ps.setString(4, rol);
+
+                ps.executeUpdate();//Se insertan los datos en la base de datos
+                //Se muestra un mensaje de que los usuarios fueron insertados
+                JOptionPane.showMessageDialog(null, "Datos insertados correctamente");
+                JOptionPane.showMessageDialog(null, "Usuario ingresado con exito");
+                limpiarReprensentanteGNERAL();
+                limpiaTabla(TablaGENERAL);
+                consultarReprensentanteGNERAL(TablaGENERAL);
+            }
+        } catch (Exception ex) {
+            System.out.println(ex);
+        }
+    }
+     
+    public void InsertarReprensentanteGRUPO(String Usuario){
+        String representante = "";
+        int idRepresentante = 0;
+
+        try (Connection conexion = LogicaConexion.getConecta()) {
+            String consulta = "SELECT id_representante_gral, representante_gral FROM representantes_gral WHERE usuario=?;";
+            System.out.println(consulta);
+            System.out.println(Usuario);
+            try (PreparedStatement consultaPreparada = conexion.prepareStatement(consulta)) {
+                consultaPreparada.setString(1, usuario);
+
+                try (ResultSet resultado = consultaPreparada.executeQuery()) {
+                    if (resultado.next()) {
+                        idRepresentante = resultado.getInt("id_representante_gral");
+                        representante = resultado.getString("representante_gral");
+                    }
+                }
+            }
+              // Inserción en la tabla representantes_gpo
+        String sql = "INSERT INTO representantes_gpo (representante_gpo, telefono, clave_elector, seccion_electoral, representante_gral, id_representante_gral) VALUES (?, ?, ?, ?, ?, ?)";
+        
+        try (PreparedStatement insercionPreparada = conexion.prepareStatement(sql)) {
+            // Setear los valores para la inserción
+            insercionPreparada.setString(1, txtNR1.getText());
+            insercionPreparada.setString(2, txtTel.getText());
+            insercionPreparada.setString(3, txtClav.getText());
+            insercionPreparada.setString(4, txtSeccio.getText());
+            insercionPreparada.setString(5, representante);
+            insercionPreparada.setInt(6, idRepresentante);
+
+            // Ejecutar la inserción
+            insercionPreparada.executeUpdate();
+             JOptionPane.showMessageDialog(null, "Datos insertados correctamente");
+            
+        }
+
+        } catch (SQLException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+    
+     
+     
+     public void consultarReprensentanteGNERAL(DefaultTableModel x) { //Metodo que ayuda a realizar la consulta del producto
+        Object[] ob = new Object[4];//Se define un arreglo de objetos
+        try {
+            rs = ejecutaQuery("select * from representantes_gral");//Se reaalizar una consulta de producto
+            while (rs.next()) { //Se le asignan los valor a un arreglo de objetos 
+                ob[0] = rs.getObject("id_representante_gral");
+                ob[1] = rs.getObject("representante_gral"); 
+                ob[2] = rs.getObject("usuario");
+                ob[3] = rs.getObject("current_rol");
+                x.addRow(ob);//Se agrega los campos en un JTable
+            }
+            conexion.close();//Se cierra conexion
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.out.println("Hay algo mal");
+        }
+       jTablaGENERAL.setModel(x);
+    }
+     
+      public void consultarReprensentanteGRUPAL(DefaultTableModel x) { //Metodo que ayuda a realizar la consulta del producto
+        Object[] ob = new Object[6];//Se define un arreglo de objetos
+        try {
+            rs = ejecutaQuery("select * from representantes_gpo");//Se reaalizar una consulta de producto
+            while (rs.next()) { //Se le asignan los valor a un arreglo de objetos 
+                ob[0] = rs.getObject("id_representante_gpo");
+                ob[1] = rs.getObject("representante_gpo"); 
+                ob[2] = rs.getObject("telefono");
+                ob[3] = rs.getObject("clave_elector");
+                ob[4] = rs.getObject("seccion_electoral");
+                ob[5] = rs.getObject("representante_gral");
+                x.addRow(ob);//Se agrega los campos en un JTable
+            }
+            conexion.close();//Se cierra conexion
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.out.println("Hay algo mal");
+        }
+       jTablaGrupo.setModel(x);
+    }
+     
+      public void eliminarRegistroReprensentanteGNERAL(DefaultTableModel dtm) { //Metodo que ayuda a elimanr productos
+        try {
+            if (jTablaGENERAL.getSelectedRow() < 0) { //Se verifica si el usuario eligio alguna fila para moficar          
+                JOptionPane.showMessageDialog(null, "Selecione algun registro para eliminar");//Mensaje para notificar que tiene que seleccionar un prodcuto
+            } else {
+                int fila = jTablaGENERAL.getSelectedRow(); //Se asigna la fila seleccionada
+                int id = Integer.parseInt(jTablaGENERAL.getValueAt(fila, 0).toString());
+               rs = ejecutaQuery("delete from  representantes_gral where id_representante_gral=" + id + ";");
+                    JOptionPane.showMessageDialog(null, "Registro eliminado");
+                    conexion.close();
+                    dtm.removeRow(jTablaGENERAL.getSelectedRow());
+                    
+               
+            }
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+
+        }
+      }
+      
+      public void CambiarDatosRepresentanteGNERAL() {
+    int fila = jTablaGENERAL.getSelectedRow();
+    
+    if (fila >= 0) { // Verificar si se ha seleccionado una fila
+        int id = Integer.parseInt(jTablaGENERAL.getValueAt(fila, 0).toString());
+        String rol =  jcRol.getSelectedItem().toString(); // Agregar "ROLE " al nombre del rol
+          PreparedStatement ps;
+        try {
+            String actualizacion = "UPDATE representantes_gral SET representante_gral= ?, usuario= ?, pwd= ?, current_rol= ?::rol where id_representante_gral=" + id + ";";
+            System.out.println(actualizacion);
+            // Usando try-with-resources para manejar el cierre automático de recursos
+            
+            ps = con.prepareStatement(actualizacion);
+                ps.setString(1, txtNR.getText());
+                ps.setString(2, txtUsuario.getText());
+                ps.setString(3, txtPwd.getText());
+                ps.setString(4, rol);
+              
+                ps.executeUpdate();
+            // Se cierra automáticamente el PreparedStatement aquí
+            
+            JOptionPane.showMessageDialog(null, "Datos actualizados correctamente");
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Error al actualizar datos: " + e.getMessage());
+        }
+    } else {
+        JOptionPane.showMessageDialog(null, "Selecciona una fila para actualizar");
+    }
+}
+       
+     
+     public void limpiaTabla(DefaultTableModel x) { //Metod que ayuda a limpiar las tablas
+        int a = x.getRowCount();
+
+        while (a != 0) {
+            if (a != 0) {
+                x.removeRow(0);
+            }
+            a = x.getRowCount();
+        }
+    }
+     
+     public void limpiarReprensentanteGNERAL(){
+         txtNR.setText(null);
+         txtUsuario.setText(null);
+         txtPwd.setText(null);
+     }
+     
+     public void limpiarReprensentanteGRUPAL(){
+         txtNR1.setText(null);
+         txtTel.setText(null);
+        txtClav.setText(null);
+        txtSeccio.setText(null);
+     }
+
+    
     
 
    
@@ -105,7 +353,7 @@ public class principal extends javax.swing.JFrame {
         jButton1 = new javax.swing.JButton();
         Listar = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTable1 = new javax.swing.JTable();
+        jTablaGENERAL = new javax.swing.JTable();
         jMenuBar2 = new javax.swing.JMenuBar();
         jMenu2 = new javax.swing.JMenu();
         jMenuItem4 = new javax.swing.JMenuItem();
@@ -178,7 +426,7 @@ public class principal extends javax.swing.JFrame {
         jButton2 = new javax.swing.JButton();
         Listar1 = new javax.swing.JButton();
         jScrollPane3 = new javax.swing.JScrollPane();
-        jTable3 = new javax.swing.JTable();
+        jTablaGrupo = new javax.swing.JTable();
         jMenuBar4 = new javax.swing.JMenuBar();
         jMenu4 = new javax.swing.JMenu();
         jMenuItem6 = new javax.swing.JMenuItem();
@@ -227,12 +475,27 @@ public class principal extends javax.swing.JFrame {
 
         btnRegistrar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/create.png"))); // NOI18N
         btnRegistrar.setText("Agregar");
+        btnRegistrar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnRegistrarActionPerformed(evt);
+            }
+        });
 
         btnModificar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/update.png"))); // NOI18N
         btnModificar.setText("Modificar");
+        btnModificar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnModificarActionPerformed(evt);
+            }
+        });
 
         jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/delete.png"))); // NOI18N
         jButton3.setText("Eliminar");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
 
         jLabel25.setText("Contraseña:");
 
@@ -321,18 +584,18 @@ public class principal extends javax.swing.JFrame {
         Listar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/read.png"))); // NOI18N
         Listar.setText("Listar");
 
-        jTable1.setModel(new javax.swing.table.DefaultTableModel(
+        jTablaGENERAL.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null}
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
             },
             new String [] {
-                "Nombre", "Usuario", "Rol"
+                "ID", "Nombre", "Usuario", "Rol"
             }
         ));
-        jScrollPane1.setViewportView(jTable1);
+        jScrollPane1.setViewportView(jTablaGENERAL);
 
         javax.swing.GroupLayout jPanel11Layout = new javax.swing.GroupLayout(jPanel11);
         jPanel11.setLayout(jPanel11Layout);
@@ -744,6 +1007,11 @@ public class principal extends javax.swing.JFrame {
 
         btnRegistrar1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/create.png"))); // NOI18N
         btnRegistrar1.setText("Agregar");
+        btnRegistrar1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnRegistrar1ActionPerformed(evt);
+            }
+        });
 
         btnModificar1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/update.png"))); // NOI18N
         btnModificar1.setText("Modificar");
@@ -840,18 +1108,15 @@ public class principal extends javax.swing.JFrame {
         Listar1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/read.png"))); // NOI18N
         Listar1.setText("Listar");
 
-        jTable3.setModel(new javax.swing.table.DefaultTableModel(
+        jTablaGrupo.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null},
-                {null, null, null, null, null},
-                {null, null, null, null, null},
-                {null, null, null, null, null}
+
             },
             new String [] {
-                "Nombre", "Telefono", "Clave electoral", "Seccion electoral", "Representante"
+                "ID", "Nombre", "Telefono", "Clave electoral", "Seccion electoral", "Representante"
             }
         ));
-        jScrollPane3.setViewportView(jTable3);
+        jScrollPane3.setViewportView(jTablaGrupo);
 
         javax.swing.GroupLayout jPanel14Layout = new javax.swing.GroupLayout(jPanel14);
         jPanel14.setLayout(jPanel14Layout);
@@ -1096,7 +1361,8 @@ public class principal extends javax.swing.JFrame {
             PreparedStatement ps = con.prepareStatement(consulta);
             ResultSet rs = ps.executeQuery();
             if(rs.next()){
-                String u = rs.getString("usuario");
+                String  u = rs.getString("usuario");
+                
                 String p = rs.getString("pwd");
                 String r = rs.getString("current_rol");
                 if(contra.equals(p)){
@@ -1128,6 +1394,11 @@ public class principal extends javax.swing.JFrame {
         RepresentanteGNERAL.dispose();
         RepresentanteGNERAL.setVisible(true);
         this.setVisible(false);
+        
+        limpiaTabla(TablaGENERAL);
+        limpiarReprensentanteGNERAL();
+        consultarReprensentanteGNERAL(TablaGENERAL);
+        
     }//GEN-LAST:event_jMenuItem1ActionPerformed
 
     private void jMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem4ActionPerformed
@@ -1171,6 +1442,7 @@ public class principal extends javax.swing.JFrame {
          RepresentanteGPO.dispose();
          RepresentanteGPO.setVisible(true);
          this.setVisible(false);
+         consultarReprensentanteGRUPAL(TablaGRUPO);
     }//GEN-LAST:event_jMenuItem12ActionPerformed
 
     private void jMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem8ActionPerformed
@@ -1189,6 +1461,37 @@ public class principal extends javax.swing.JFrame {
     private void btnRegistrarPActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegistrarPActionPerformed
        
     }//GEN-LAST:event_btnRegistrarPActionPerformed
+
+    private void btnRegistrar1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegistrar1ActionPerformed
+        InsertarReprensentanteGRUPO(usuario);
+    }//GEN-LAST:event_btnRegistrar1ActionPerformed
+
+    private void btnRegistrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegistrarActionPerformed
+      InsertarReprensentanteGNERAL();
+    }//GEN-LAST:event_btnRegistrarActionPerformed
+
+    private void btnModificarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnModificarActionPerformed
+       if (jTablaGENERAL.getSelectedRow() < 0) { //Se verifica si el usuario eligio alguna fila para moficar          
+            JOptionPane.showMessageDialog(null, "Selecione el dato a editar");//En caso de no haber seleccionada alguna se le manda este mensage
+        } else if (txtNR.getText().isEmpty() ||txtUsuario.getText().isEmpty() ||txtPwd.getText().isEmpty()){
+          JOptionPane.showMessageDialog(null, "Ingrese los datos solicitados", "Error", JOptionPane.ERROR_MESSAGE);
+        }else{
+
+            
+           CambiarDatosRepresentanteGNERAL();
+           limpiaTabla(TablaGENERAL);
+           limpiarReprensentanteGNERAL();
+           consultarReprensentanteGNERAL(TablaGENERAL);
+          
+        }
+    }//GEN-LAST:event_btnModificarActionPerformed
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+       eliminarRegistroReprensentanteGNERAL(TablaGENERAL);
+       limpiaTabla(TablaGENERAL);
+       limpiarReprensentanteGNERAL();
+       consultarReprensentanteGNERAL(TablaGENERAL);
+    }//GEN-LAST:event_jButton3ActionPerformed
     
     /**
      * @param args the command line arguments
@@ -1322,9 +1625,9 @@ public class principal extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
-    private javax.swing.JTable jTable1;
+    private javax.swing.JTable jTablaGENERAL;
+    private javax.swing.JTable jTablaGrupo;
     private javax.swing.JTable jTable2;
-    private javax.swing.JTable jTable3;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField4;
     private javax.swing.JTextField jTextField5;
