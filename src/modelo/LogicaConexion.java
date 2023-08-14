@@ -6,6 +6,8 @@ import javax.swing.JOptionPane;
 
 
 public class LogicaConexion {
+    static ResultSet rs = null;
+    static Connection conexion = null;
     public static String database = "gpos_promovidos";
     public static String url = "jdbc:postgresql://192.168.1.30:5432/"+database;
     public static String usuario="postgres" ,password="123";
@@ -22,4 +24,20 @@ public class LogicaConexion {
             return null;
         }  
     } 
+    
+       static public ResultSet ejecutaQuery(String sql) {
+
+        try {
+          Connection con = LogicaConexion.getConecta();
+         
+            //Se crea un statement para realizar la consulta
+            Statement st = con.createStatement();
+            rs = st.executeQuery(sql);
+
+        } catch (Exception ex) {
+            System.out.println(ex);
+        }
+        return rs;
+
+    }
 }
