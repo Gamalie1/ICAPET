@@ -9,9 +9,10 @@ public class LogicaConexion {
     static ResultSet rs = null;
     static Connection conexion = null;
     public static String database = "gpos_promovidos";
-    public static String url = "jdbc:postgresql://192.168.1.30:5432/"+database;
-    public static String usuario="postgres" ,password="123";
-    
+   // public static String url = "jdbc:postgresql://192.168.1.30/"+database;
+   // public static String usuario="postgres" ,password="123";
+     public static String url = "jdbc:postgresql://localhost/"+database;
+     public static String usuario="postgres" ,password="HOLA";
     
     public static Connection getConecta(){
         try{
